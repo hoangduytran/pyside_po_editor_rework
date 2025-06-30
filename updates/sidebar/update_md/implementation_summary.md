@@ -36,7 +36,7 @@
 
 ### 4. Test Infrastructure  
 
-**Location:** `updates/sidebar/test_cases/test_sidebar.py`
+**Location:** `updates/sidebar/test_cases/sidebar/test_sidebar.py`
 
 **Coverage:**
 
@@ -100,28 +100,50 @@ plugins/core/file_explorer/
 
 updates/sidebar/
   test_cases/
-    test_sidebar.py            # Unit tests
+    sidebar/
+      test_sidebar.py          # Unit tests for sidebar components
+      test_sidebar_resize.py   # Tests for sidebar resizing functionality
   update_md/
     sidebar_update.md          # Initial update doc
     implementation_summary.md  # This file
+    sidebar_resizing_implementation.md   # Resizing update doc
+
+updates/icons/
+  test_cases/
+    test_icons.py              # Tests for custom icons
 ```
 
 ## Next Steps
 
 1. **Replace Original Explorer**: Switch to enhanced file explorer
 2. **Add Search Panel**: Implement actual search functionality  
-3. **Icon Support**: Add proper icons to sidebar buttons
-4. **Panel Persistence**: Remember last active panel
-5. **Keyboard Shortcuts**: Add hotkeys for panel switching
-6. **Context Menus**: Right-click functionality for files
+3. ✅ **Icon Support**: Added custom icons to sidebar buttons
+4. ✅ **Responsive Sidebar**: Implemented sidebar resizing functionality
+5. **Panel Persistence**: Remember last active panel
+6. **Keyboard Shortcuts**: Add hotkeys for panel switching
+7. **Context Menus**: Right-click functionality for files
 
 ## Testing
 
-Run tests with:
+Run sidebar component tests with:
 
 ```bash
-cd updates/sidebar/test_cases
+cd updates/sidebar/test_cases/sidebar
 python -m pytest test_sidebar.py -v
+```
+
+Run resizing tests with:
+
+```bash
+cd updates/sidebar/test_cases/sidebar
+python test_sidebar_resize.py
+```
+
+Run icon tests with:
+
+```bash
+cd updates/icons/test_cases
+python test_icons.py
 ```
 
 ## Integration Complete
