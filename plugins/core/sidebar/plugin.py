@@ -91,9 +91,15 @@ class SidebarContentArea(QWidget):
         
     def _setup_ui(self):
         """Set up the content area UI."""
+        # Set size policy to allow expansion
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.stacked_widget)
+        
+        # Ensure stacked widget expands properly
+        self.stacked_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         
     def add_panel(self, panel_id: str, panel: QWidget):
         """Add a panel to the content area.
@@ -165,18 +171,26 @@ class SidebarPanel(AbstractPanel):
         self.button_layout.addStretch()  # Push buttons to top
         
         # Create content area (already initialized in __init__)
-        self.content_area.setFixedWidth(250)
+        # Remove fixed width to allow resizing
+        self.content_area.setMinimumWidth(200)
         self.content_area.setObjectName("SidebarContentArea")
         
         # Add to main layout
         self.main_layout.addWidget(self.buttons_widget)
         self.main_layout.addWidget(self.content_area)
         
+        # Set stretch factors - content area should expand
+        self.main_layout.setStretchFactor(self.buttons_widget, 0)  # Fixed size
+        self.main_layout.setStretchFactor(self.content_area, 1)    # Expandable
+        
         self.setWidget(main_widget)
         
+        # Set size constraints for the dock widget
+        self.setMinimumWidth(250)  # Minimum total width (50 + 200)
+        self.setMaximumWidth(600)  # Allow reasonable expansion
+        
         # Set initial size
-        self.setMinimumWidth(300)
-        self.setMaximumWidth(400)
+        self.resize(300, 400)
         
     def add_sidebar_item(self, item_id: str, text: str, panel_widget: QWidget, icon_name: Optional[str] = None):
         """Add an item to the sidebar.
@@ -327,9 +341,12 @@ class SidebarPlugin(Plugin):
             from PySide6.QtCore import QDir
             
             explorer_widget = QWidget()
+            explorer_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
             layout = QVBoxLayout(explorer_widget)
+            layout.setContentsMargins(0, 0, 0, 0)
             
             tree_view = QTreeView()
+            tree_view.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
             file_model = QFileSystemModel()
             file_model.setRootPath(QDir.currentPath())
             tree_view.setModel(file_model)
@@ -342,7 +359,9 @@ class SidebarPlugin(Plugin):
         
         # Search placeholder  
         search_widget = QWidget()
+        search_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         search_layout = QVBoxLayout(search_widget)
+        search_layout.setContentsMargins(8, 8, 8, 8)
         search_button = QPushButton("Search in Files")
         search_button.setObjectName("SidebarContentButton")
         search_layout.addWidget(search_button)
@@ -350,7 +369,9 @@ class SidebarPlugin(Plugin):
         
         # Add debug panel
         debug_widget = QWidget()
+        debug_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         debug_layout = QVBoxLayout(debug_widget)
+        debug_layout.setContentsMargins(8, 8, 8, 8)
         debug_button = QPushButton("Start Debugging")
         debug_button.setObjectName("SidebarContentButton")
         debug_layout.addWidget(debug_button)
@@ -358,7 +379,9 @@ class SidebarPlugin(Plugin):
         
         # Add extensions panel
         extensions_widget = QWidget()
+        extensions_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         extensions_layout = QVBoxLayout(extensions_widget)
+        extensions_layout.setContentsMargins(8, 8, 8, 8)
         extensions_button = QPushButton("Browse Extensions")
         extensions_button.setObjectName("SidebarContentButton")
         extensions_layout.addWidget(extensions_button)
@@ -366,7 +389,9 @@ class SidebarPlugin(Plugin):
         
         # Add settings panel
         settings_widget = QWidget()
+        settings_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         settings_layout = QVBoxLayout(settings_widget)
+        settings_layout.setContentsMargins(8, 8, 8, 8)
         settings_button = QPushButton("Open Settings")
         settings_button.setObjectName("SidebarContentButton")
         settings_layout.addWidget(settings_button)

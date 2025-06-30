@@ -43,6 +43,13 @@ QMainWindow {
 #SidebarContentArea {
     background-color: #252526;
     border-right: 1px solid #3e3e42;
+    min-width: 200px;
+}
+
+/* Stacked Widget inside Content Area */
+QStackedWidget {
+    background-color: #252526;
+    border: none;
 }
 
 /* File Explorer */
@@ -103,6 +110,7 @@ QPushButton:pressed {
     border-radius: 3px;
     text-align: left;
     font-size: 13px;
+    min-width: 120px;
 }
 
 #SidebarContentButton:hover {
