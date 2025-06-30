@@ -16,6 +16,7 @@ sys.path.insert(0, str(project_root))
 from core.main_frame import MainFrame
 from core.plugin_manager import PluginManager
 from core.database_manager import DatabaseManager
+from styles.vscode_theme import GLOBAL_STYLESHEET
 
 
 def main():
@@ -24,6 +25,9 @@ def main():
     app.setApplicationName("PO Editor")
     app.setApplicationVersion("1.0.0")
     app.setOrganizationName("PO Editor Team")
+    
+    # Apply global stylesheet
+    app.setStyleSheet(GLOBAL_STYLESHEET)
     
     # Initialize database
     db_manager = DatabaseManager()

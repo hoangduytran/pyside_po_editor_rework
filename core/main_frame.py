@@ -32,6 +32,7 @@ class MainFrame(QMainWindow):
         self.plugin_manager = plugin_manager
         self.database_manager = database_manager
         self.panels = {}  # Dictionary to store registered panels
+        self.sidebar_panel = None  # Reference to sidebar panel
         
         self._setup_ui()
         self._setup_menus()
@@ -104,8 +105,14 @@ class MainFrame(QMainWindow):
             
         self.panels[panel_id] = panel
         
-        # Add the panel as a dock widget
-        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, panel)
+        # Special handling for sidebar
+        if panel_id.startswith("sidebar_"):
+            self.sidebar_panel = panel
+            self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, panel)
+        else:
+            # Other panels - hide them by default since they should be accessed through sidebar
+            self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, panel)
+            panel.hide()  # Hide by default
         
         # Add toggle action to View menu
         toggle_action = panel.toggleViewAction()

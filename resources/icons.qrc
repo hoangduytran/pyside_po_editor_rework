@@ -1,0 +1,9 @@
+<RCC>
+  <qresource prefix="/">
+    <file>icons/explorer.svg</file>
+    <file>icons/search.svg</file>
+    <file>icons/close.svg</file>
+    <file>icons/undock.svg</file>
+    <!-- add more SVGs here -->
+  </qresource>
+</RCC>

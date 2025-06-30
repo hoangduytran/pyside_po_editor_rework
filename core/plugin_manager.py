@@ -210,7 +210,12 @@ class PluginManager(QObject):
                     for panel in panels:
                         panel_id = f"{plugin_name}_{panel.__class__.__name__}"
                         panel.set_panel_id(panel_id)
-                        self.main_window.register_panel(panel_id, panel)
+                        # Special handling for sidebar - don't register individual panels
+                        if plugin_name == "sidebar":
+                            self.main_window.register_panel(panel_id, panel)
+                        else:
+                            # For other plugins, register as regular panels
+                            self.main_window.register_panel(panel_id, panel)
                     
                 self.plugin_loaded.emit(plugin_name)
                 print(f"Plugin '{plugin_name}' loaded successfully")

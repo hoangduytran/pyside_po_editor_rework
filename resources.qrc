@@ -1,0 +1,9 @@
+<RCC>
+  <qresource prefix="/icons">
+    <file>resources/icons/explorer.png</file>
+    <file>resources/icons/search.png</file>
+    <file>resources/icons/debug.png</file>
+    <file>resources/icons/extensions.png</file>
+    <file>resources/icons/settings.png</file>
+  </qresource>
+</RCC>
