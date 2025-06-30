@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout, QPushButton, QLineEdit, QLabel, QMenu,
     QToolButton, QToolTip, QApplication, QAbstractItemView
 )
-from PySide6.QtCore import QDir, Signal, Qt, QPoint, QSize, QTimer, QUrl
+from PySide6.QtCore import QDir, Signal, Qt, QPoint, QSize, QTimer, QUrl, QSettings
 from PySide6.QtGui import QIcon, QCursor, QDesktopServices, QAction, QActionGroup
 import os
 import glob
@@ -130,13 +130,48 @@ class FileExplorerWidget(QWidget):
         self.path_edit = QLineEdit()
         self.refresh_button = QToolButton()
         self.nav_button = QToolButton()
-        self.current_path = QDir.currentPath()
+        self.settings = QSettings("POEditor", "Settings")
         self.navigation_history = NavigationHistory()
+        
+        # Get home folder as default path
+        default_path = os.path.expanduser("~")
+        self.current_path = default_path
+        
+        # Try to get saved path from settings
+        if self.settings.contains("explorer/current_path"):
+            saved_path = self.settings.value("explorer/current_path")
+            if saved_path and os.path.exists(str(saved_path)):
+                self.current_path = str(saved_path)
+        
+        # Initialize settings with proper types
         self.show_hidden_files = False
+        if self.settings.contains("explorer/show_hidden"):
+            self.show_hidden_files = self.settings.value("explorer/show_hidden", type=bool)
+        
         self.path_filter = ""
-        self.view_mode = "list"  # One of: list, icons, columns, gallery
-        self.active_columns = ["name", "size"]  # Default visible columns
-        self.current_sort_column = 0  # Default sort by name
+        
+        # View mode (with safe fallback)
+        self.view_mode = "list"
+        if self.settings.contains("explorer/view_mode"):
+            view_mode = self.settings.value("explorer/view_mode")
+            if view_mode in ["list", "icons", "columns", "gallery"]:
+                self.view_mode = str(view_mode)
+        
+        # Active columns
+        self.active_columns = ["name", "size"]
+        if self.settings.contains("explorer/active_columns"):
+            columns = self.settings.value("explorer/active_columns")
+            if isinstance(columns, list):
+                self.active_columns = [str(col) for col in columns]
+        
+        # Sort settings
+        self.current_sort_column = 0
+        if self.settings.contains("explorer/sort_column"):
+            try:
+                self.current_sort_column = int(self.settings.value("explorer/sort_column"))
+            except (ValueError, TypeError):
+                pass
+                
         self.current_sort_order = Qt.SortOrder.AscendingOrder
         self.sort_actions = []  # Will store sort actions for menu
         self.filter_timer = QTimer(self)
@@ -146,6 +181,7 @@ class FileExplorerWidget(QWidget):
         self._setup_ui()
         self._connect_signals()
         self._setup_sorting()
+        self._load_history()
         
     def _setup_ui(self):
         """Set up the UI components."""
@@ -253,7 +289,7 @@ class FileExplorerWidget(QWidget):
         # Toggle hidden files
         hidden_action = QAction("Hidden Files", self)
         hidden_action.setCheckable(True)
-        hidden_action.setChecked(self.show_hidden_files)
+        hidden_action.setChecked(bool(self.show_hidden_files))
         hidden_action.triggered.connect(self._toggle_hidden_files)
         view_menu.addAction(hidden_action)
         
@@ -395,7 +431,7 @@ class FileExplorerWidget(QWidget):
         # Toggle hidden files
         hidden_action = QAction("Hidden Files", self)
         hidden_action.setCheckable(True)
-        hidden_action.setChecked(self.show_hidden_files)
+        hidden_action.setChecked(bool(self.show_hidden_files))
         hidden_action.triggered.connect(self._toggle_hidden_files)
         view_menu.addAction(hidden_action)
         
@@ -658,7 +694,12 @@ class FileExplorerWidget(QWidget):
             self.current_path = path
             self.file_model.setRootPath(path)
             self.tree_view.setRootIndex(self.file_model.index(path))
-            self.path_edit.setText(path)
+            
+            # Display only the basename in the path editor
+            basename = os.path.basename(path) or path
+            self.path_edit.setText(basename)
+            # Set tooltip to show full path
+            self.path_edit.setToolTip(path)
             
             # Apply hidden files setting
             self.file_model.setFilter(QDir.Filter.AllEntries | QDir.Filter.NoDotAndDotDot | 
@@ -669,6 +710,9 @@ class FileExplorerWidget(QWidget):
                 self.navigation_history.add_path(path)
                 self.back_action.setEnabled(self.navigation_history.can_go_back())
                 self.forward_action.setEnabled(self.navigation_history.can_go_forward())
+                
+                # Save settings
+                self._save_history()
                 
             self.directory_changed.emit(path)
             
@@ -710,12 +754,15 @@ class FileExplorerWidget(QWidget):
         Args:
             checked: Whether to show hidden files
         """
-        self.show_hidden_files = checked
+        self.show_hidden_files = bool(checked)
         if self.show_hidden_files:
             self.file_model.setFilter(QDir.Filter.AllEntries | QDir.Filter.NoDotAndDotDot | QDir.Filter.Hidden)
         else:
             self.file_model.setFilter(QDir.Filter.AllEntries | QDir.Filter.NoDotAndDotDot)
         self._refresh()
+        
+        # Save setting
+        self.settings.setValue("explorer/show_hidden", self.show_hidden_files)
         
     def _set_view_mode(self, mode):
         """Set the view mode.
@@ -724,6 +771,8 @@ class FileExplorerWidget(QWidget):
             mode: View mode (list, icons, columns, gallery)
         """
         self.view_mode = mode
+        # Save setting
+        self.settings.setValue("explorer/view_mode", self.view_mode)
         
         # Update tree view settings based on mode
         if mode == "list":
@@ -794,19 +843,22 @@ class FileExplorerWidget(QWidget):
             self.active_columns.append(column_id)
             header.showSection(column_index)
             
-            # Set appropriate width based on column type
-            if column_id == "name":
-                header.resizeSection(column_index, 200)
-            elif column_id == "size":
-                header.resizeSection(column_index, 80)
-            elif column_id == "kind":
-                header.resizeSection(column_index, 100)
-            elif column_id == "date_modified":
-                header.resizeSection(column_index, 120)
-            elif column_id == "date_created":
-                header.resizeSection(column_index, 120)
-            else:
-                header.resizeSection(column_index, 100)
+        # Save setting
+        self.settings.setValue("explorer/active_columns", self.active_columns)
+            
+        # Set appropriate width based on column type
+        if column_id == "name":
+            header.resizeSection(column_index, 200)
+        elif column_id == "size":
+            header.resizeSection(column_index, 80)
+        elif column_id == "kind":
+            header.resizeSection(column_index, 100)
+        elif column_id == "date_modified":
+            header.resizeSection(column_index, 120)
+        elif column_id == "date_created":
+            header.resizeSection(column_index, 120)
+        else:
+            header.resizeSection(column_index, 100)
                 
     def _setup_sorting(self):
         """Set up column sorting functionality."""
@@ -831,6 +883,9 @@ class FileExplorerWidget(QWidget):
         # Store current sort settings
         self.current_sort_column = column_index
         self.current_sort_order = sort_order
+        
+        # Save setting
+        self.settings.setValue("explorer/sort_column", self.current_sort_column)
         
         # Update active sort menu items if needed
         for i, action in enumerate(self.sort_actions):
@@ -871,6 +926,49 @@ class FileExplorerWidget(QWidget):
         self.current_sort_order = order
         self.tree_view.sortByColumn(self.current_sort_column, order)
         
+    def _load_history(self):
+        """Load navigation history from settings."""
+        # Initialize empty history
+        self.navigation_history = NavigationHistory()
+        
+        # Try to load history from settings
+        if self.settings.contains("explorer/history"):
+            history_list = self.settings.value("explorer/history")
+            if isinstance(history_list, list):
+                for path in history_list:
+                    if path and os.path.exists(str(path)):
+                        self.navigation_history.add_path(str(path))
+            
+        # If no valid history is loaded, add current path
+        if not self.navigation_history.history:
+            if os.path.exists(self.current_path):
+                self.navigation_history.add_path(self.current_path)
+            else:
+                default_path = os.path.expanduser("~")
+                self.current_path = default_path
+                self.navigation_history.add_path(default_path)
+        
+        # Try to set current index from settings
+        if self.settings.contains("explorer/history_index"):
+            try:
+                current_index = int(self.settings.value("explorer/history_index"))
+                if 0 <= current_index < len(self.navigation_history.history):
+                    self.navigation_history.current_index = current_index
+            except (ValueError, TypeError):
+                # If conversion fails, keep default index
+                pass
+            
+    def _save_history(self):
+        """Save navigation history to settings."""
+        self.settings.setValue("explorer/history", self.navigation_history.history)
+        self.settings.setValue("explorer/history_index", self.navigation_history.current_index)
+        self.settings.setValue("explorer/current_path", self.current_path)
+        self.settings.setValue("explorer/show_hidden", self.show_hidden_files)
+        self.settings.setValue("explorer/view_mode", self.view_mode)
+        self.settings.setValue("explorer/active_columns", self.active_columns)
+        self.settings.setValue("explorer/sort_column", self.current_sort_column)
+        self.settings.setValue("explorer/sort_order", self.current_sort_order == Qt.SortOrder.AscendingOrder)
+
 
 class FileExplorerPanel(AbstractPanel):
     """File explorer panel for browsing files and directories."""
