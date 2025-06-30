@@ -149,6 +149,7 @@ The application uses QSettings to store and retrieve user preferences:
 1. **Initialization**
    - Settings are loaded during widget initialization
    - Default values are used as fallback
+   - Current directory, view mode, and column visibility are automatically applied at startup
 
 2. **Runtime Updates**
    - Changes to settings are saved immediately
@@ -156,8 +157,15 @@ The application uses QSettings to store and retrieve user preferences:
 
 3. **Startup Application**
    - Settings are restored during widget initialization
-   - View mode is explicitly applied after UI setup
+   - View mode is explicitly applied during initialization
    - Navigation history is restored if available
+   - The current directory from settings is automatically loaded and displayed
+   - Sort settings are applied consistently
+
+4. **UI Improvements**
+   - Path editor shows only the basename (not the full path) for cleaner UI
+   - Tooltip provides the full path for reference
+   - Directory content is immediately loaded on startup without requiring manual refresh
 
 ## Testing
 
