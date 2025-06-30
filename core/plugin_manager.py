@@ -308,3 +308,11 @@ class PluginManager(QObject):
             True if loaded, False otherwise
         """
         return plugin_name in self.plugins
+    
+    def get_plugins(self) -> Dict[str, Plugin]:
+        """Get all loaded plugins.
+        
+        Returns:
+            Dictionary of plugin instances with plugin names as keys
+        """
+        return self.plugins

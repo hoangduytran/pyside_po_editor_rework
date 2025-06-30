@@ -73,6 +73,14 @@ class MainFrame(QMainWindow):
         
         file_menu.addSeparator()
         
+        # Add preferences action to File menu
+        preferences_action = QAction("&Preferences...", self)
+        preferences_action.setShortcut("Ctrl+,")
+        preferences_action.triggered.connect(self.show_preferences)
+        file_menu.addAction(preferences_action)
+        
+        file_menu.addSeparator()
+        
         exit_action = QAction("E&xit", self)
         exit_action.setShortcut("Ctrl+Q")
         exit_action.triggered.connect(self.close)
@@ -152,6 +160,47 @@ class MainFrame(QMainWindow):
         """Handle file save action."""
         # TODO: Implement file saving
         self.status_bar.showMessage("File -> Save clicked")
+        
+    def show_preferences(self):
+        """Show the preferences dialog."""
+        # Find the settings panel and open the preferences dialog
+        settings_panel = self.get_panel("settings")
+        if settings_panel:
+            from plugins.core.settings.plugin import SettingsPanel
+            if isinstance(settings_panel, SettingsPanel):
+                settings_panel._show_preferences()
+                return
+            
+        # If direct panel not found, try to find it in the sidebar
+        sidebar_panel = self.get_panel("sidebar_SidebarPanel")
+        from plugins.core.sidebar.plugin import SidebarPanel
+        if sidebar_panel and isinstance(sidebar_panel, SidebarPanel):
+            try:
+                sidebar_panel.set_active_panel("settings")
+                self.status_bar.showMessage("Settings panel activated in sidebar")
+                return
+            except Exception as e:
+                print(f"Failed to activate settings panel in sidebar: {str(e)}")
+                
+        # If no plugin manager, we're done
+        if not self.plugin_manager or not hasattr(self.plugin_manager, 'get_plugins'):
+            self.status_bar.showMessage("Settings panel not found")
+            return
+            
+        # Try plugins as a last resort
+        try:
+            for plugin_id, plugin in self.plugin_manager.get_plugins().items():
+                if hasattr(plugin, 'get_sidebar_panel') and callable(plugin.get_sidebar_panel):
+                    sidebar_panel = plugin.get_sidebar_panel()
+                    if sidebar_panel and isinstance(sidebar_panel, SidebarPanel):
+                        sidebar_panel.set_active_panel("settings")
+                        self.status_bar.showMessage("Settings panel activated in sidebar")
+                        return
+        except Exception as e:
+            print(f"Error searching for settings panel: {str(e)}")
+        
+        # If we get here, no settings panel found
+        self.status_bar.showMessage("Settings panel not found")
         
     def show_message(self, message: str, timeout: int = 5000):
         """Show a message in the status bar.

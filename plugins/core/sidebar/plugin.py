@@ -156,6 +156,8 @@ class SidebarPanel(AbstractPanel):
         """Set up the sidebar UI."""
         # Main widget
         main_widget = QWidget()
+        self.setWidget(main_widget)  # Set the main widget for the QDockWidget
+        
         self.main_layout = QHBoxLayout(main_widget)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.main_layout.setSpacing(0)
@@ -281,25 +283,29 @@ class SidebarPanel(AbstractPanel):
 class SidebarPlugin(Plugin):
     """Sidebar plugin implementation."""
     
-    def __init__(self, name: str):
+    def __init__(self, name=None):
         """Initialize the plugin."""
-        super().__init__(name, "1.0.0")
+        super().__init__("sidebar" if name is None else name, "1.0.0")
         
         # Initialize all attributes in __init__
         self.sidebar_panel = None
         
-    def load(self) -> bool:
-        """Load the sidebar plugin."""
+    def initialize(self, main_window=None, database_manager=None):
+        """Initialize the sidebar plugin."""
+        super().initialize(main_window, database_manager)
         try:
-            self.sidebar_panel = SidebarPanel()
+            self.sidebar_panel = SidebarPanel(self.main_window)
             
             # Add default panels
-            self._add_default_panels()
-            
-            print("Sidebar plugin loaded successfully")
+            if self.main_window:
+                # Register the panel with the main window
+                self.main_window.register_panel("sidebar_SidebarPanel", self.sidebar_panel)
+                self._add_default_panels()
+                
+            print("Sidebar plugin initialized successfully")
             return True
         except Exception as e:
-            print(f"Failed to load Sidebar plugin: {e}")
+            print(f"Failed to initialize Sidebar plugin: {e}")
             return False
             
     def unload(self) -> bool:
@@ -388,14 +394,23 @@ class SidebarPlugin(Plugin):
         extensions_layout.addStretch()
         
         # Add settings panel
-        settings_widget = QWidget()
-        settings_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        settings_layout = QVBoxLayout(settings_widget)
-        settings_layout.setContentsMargins(8, 8, 8, 8)
-        settings_button = QPushButton("Open Settings")
-        settings_button.setObjectName("SidebarContentButton")
-        settings_layout.addWidget(settings_button)
-        settings_layout.addStretch()
+        try:
+            # Import the settings panel widget
+            from plugins.core.settings.plugin import SettingsPanel
+            
+            # Create real settings widget
+            settings_widget = SettingsPanel()
+        except ImportError as e:
+            print(f"Could not import SettingsPanel: {e}")
+            # Fallback to simple settings placeholder
+            settings_widget = QWidget()
+            settings_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+            settings_layout = QVBoxLayout(settings_widget)
+            settings_layout.setContentsMargins(8, 8, 8, 8)
+            settings_button = QPushButton("Open Settings")
+            settings_button.setObjectName("SidebarContentButton")
+            settings_layout.addWidget(settings_button)
+            settings_layout.addStretch()
         
         # Add to sidebar
         if self.sidebar_panel:
