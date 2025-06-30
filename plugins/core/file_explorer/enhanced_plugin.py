@@ -133,6 +133,9 @@ class FileExplorerWidget(QWidget):
         self.settings = QSettings("POEditor", "Settings")
         self.navigation_history = NavigationHistory()
         
+        # Store the current working directory at app launch
+        self.app_launch_directory = os.getcwd()
+        
         # Get home folder as default path
         default_path = os.path.expanduser("~")
         self.current_path = default_path
@@ -182,6 +185,9 @@ class FileExplorerWidget(QWidget):
         self._connect_signals()
         self._setup_sorting()
         self._load_history()
+        
+        # Apply the saved view mode after UI setup
+        self._set_view_mode(self.view_mode)
         
     def _setup_ui(self):
         """Set up the UI components."""
@@ -404,6 +410,11 @@ class FileExplorerWidget(QWidget):
         home_action = QAction("Home", self)
         home_action.triggered.connect(lambda: self.navigate_to(os.path.expanduser("~")))
         goto_menu.addAction(home_action)
+        
+        current_dir_action = QAction("Current Directory", self)
+        current_dir_action.triggered.connect(lambda: self.navigate_to(self.app_launch_directory))
+        current_dir_action.setToolTip(f"Go to application launch directory: {self.app_launch_directory}")
+        goto_menu.addAction(current_dir_action)
         
         previous_action = QAction("Previous", self)
         previous_action.triggered.connect(self._go_back)
