@@ -189,6 +189,20 @@ class FileExplorerWidget(QWidget):
         # Apply the saved view mode after UI setup
         self._set_view_mode(self.view_mode)
         
+        # Initialize with the current path 
+        # Use direct model access first to ensure model is ready
+        self.file_model.setRootPath(self.current_path)
+        self.tree_view.setRootIndex(self.file_model.index(self.current_path))
+        
+        # Display basename in path editor
+        basename = os.path.basename(self.current_path) or self.current_path
+        self.path_edit.setText(basename)
+        self.path_edit.setToolTip(self.current_path)
+        
+        # Apply sort settings
+        if hasattr(self, 'current_sort_column'):
+            self.tree_view.sortByColumn(self.current_sort_column, self.current_sort_order)
+        
     def _setup_ui(self):
         """Set up the UI components."""
         # Main layout
@@ -525,6 +539,8 @@ class FileExplorerWidget(QWidget):
         # Set up hover tooltip for path edit
         self.path_edit.installEventFilter(self)
         
+        # Path editor is already using eventFilter
+        
         # Set up filter timer
         self.path_edit.textChanged.connect(self._on_path_text_changed)
         self.filter_timer.timeout.connect(self._apply_filter)
@@ -706,7 +722,7 @@ class FileExplorerWidget(QWidget):
             self.file_model.setRootPath(path)
             self.tree_view.setRootIndex(self.file_model.index(path))
             
-            # Display only the basename in the path editor
+            # Display basename in path editor for cleaner UI
             basename = os.path.basename(path) or path
             self.path_edit.setText(basename)
             # Set tooltip to show full path
