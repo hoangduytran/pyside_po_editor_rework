@@ -42,14 +42,17 @@ This document outlines the implementation of enhanced navigation and path editin
 - Standard directory shortcuts:
   - Root (/)
   - Home (~)
+  - Current Directory ($PWD at application launch)
   - Parent directory (up)
 - History tracking of visited locations
+- Persistent directory and navigation history across restarts
 
 #### View Options
 
 - Toggle hidden files
-- View mode selection (list, icons)
+- View mode selection (list, icons) with persistence
 - Column customization (size, type, date modified)
+- Settings persistence across application restarts
 
 ### 3. FileExplorerPanel
 
@@ -111,28 +114,50 @@ The navigation system has been improved with:
    - Back/forward navigation
    - History limit to prevent memory issues
    - State tracking for UI updates
+   - Persistent history across application restarts
 
 2. **Path Navigation**
    - Shortcut buttons for common locations
+   - Current Directory option for returning to application launch directory
    - Parent directory navigation
    - Support for environment variables and ~
 
-### View Customization
+### View Customization and Persistence
 
 View customization options include:
 
 1. **Hidden Files Toggle**
    - Show/hide hidden files and directories
    - Updates filter settings in file model
+   - Persistent setting across application restarts
 
 2. **View Modes**
    - List view (small icons)
    - Icon view (large icons)
    - Placeholder for future view modes
+   - Persistent selection across application restarts
 
 3. **Column Management**
    - Toggle visibility of file information columns
    - Remember active columns
+   - Persistent column visibility settings
+
+### Settings Persistence Implementation
+
+The application uses QSettings to store and retrieve user preferences:
+
+1. **Initialization**
+   - Settings are loaded during widget initialization
+   - Default values are used as fallback
+
+2. **Runtime Updates**
+   - Changes to settings are saved immediately
+   - Each action that changes a setting triggers a save operation
+
+3. **Startup Application**
+   - Settings are restored during widget initialization
+   - View mode is explicitly applied after UI setup
+   - Navigation history is restored if available
 
 ## Testing
 
